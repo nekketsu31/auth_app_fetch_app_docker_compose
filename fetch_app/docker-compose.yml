@@ -1,0 +1,51 @@
+version: '3'
+services:
+  db:
+    extends:
+      file: ../auth_app/docker-compose.yml
+      service: mysql_auth_db
+    ports:
+      - 3306:3306
+
+  auth_app:
+    extends:
+      file: ../auth_app/docker-compose.yml
+      service: app
+    command: ./auth_app/entrypoint.sh
+    depends_on:
+      - db
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - 6379:6379
+    networks:
+      - go_network
+      
+  app:
+    build: .
+    container_name: "golang-app"
+    restart: on-failure
+    environment: 
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AUTH_APP=http://auth_app:3000/
+      - STEIN_EFISHERY_HOST=https://stein.efishery.com/v1/storages/5e1edf521073e315924ceab4/list
+      - CURR_CONV_HOST=https://free.currconv.com/api/v7/convert
+      - CURR_CONV_API_KEY=a8513e7ac5ba3a9293c6
+      - app_port=8080
+    ports: 
+      - 8080:8080 
+    depends_on:
+      - redis
+    networks:
+      - go_network
+      - node_network
+
+# Networks to be created to facilitate communication between containers
+networks:
+  node_network:
+    external: true
+  go_network:
+    driver: bridge

@@ -1,0 +1,45 @@
+# docker-compose.yml
+
+version: '3'
+services:
+    mysql_auth_db:
+        build: 
+          context: .
+          dockerfile: ./db.dockerfile
+        container_name: mysql_auth_db
+        ports: 
+          - 3306:3306
+        environment: 
+          - MYSQL_PASSWORD=root
+          - MYSQL_USER=root
+          - MYSQL_DATABASE=efishery_test_db
+          - MYSQL_ROOT_PASSWORD=root
+        volumes:
+          - ./mysql:/var/lib/mysql
+        networks:
+          - node_network
+
+    app:
+        working_dir: /auth_db
+        entrypoint: ["/bin/bash", "./entrypoint.sh"]
+        image: node:10.16.0
+        container_name: "auth-app"
+        ports:
+            - "3000:3000"
+        volumes:
+            - .:/auth_db
+        environment: 
+            - DB_HOST=mysql_auth_db
+            - DB_USER=root
+            - DB_PASSWORD=root
+            - DB_NAME=efishery_test_db
+            - DB_PORT=3306
+        networks:
+            - node_network
+
+volumes:
+    mysql_auth_db: 
+# Networks to be created to facilitate communication between containers
+networks:
+    node_network:
+        driver: bridge
